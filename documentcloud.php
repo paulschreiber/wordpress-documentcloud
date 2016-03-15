@@ -61,6 +61,10 @@ class WP_DocumentCloud {
 
 		// Store DocumentCloud metadata upon post save
 		add_action( 'save_post', array( $this, 'save' ), 10, 2 );
+
+		// print TinyMCE editor template
+		add_action( 'admin_head', array( $this, 'tinymce_init' ) );
+		add_action( 'print_media_templates', array( $this, 'print_media_templates' ) );
 	}
 
 	/**
@@ -475,6 +479,62 @@ class WP_DocumentCloud {
 			}
 			update_post_meta( $post_id, 'wide_assets', $wide_assets );
 		}
+	}
+
+	/**
+	 * Add our button to the array of mce buttons
+	 *
+	 * @param array $buttons
+	 *
+	 * @return array
+	 */
+	public function mce_buttons( $buttons ) {
+		$buttons[] = 'documentcloud';
+
+		return $buttons;
+	}
+
+	/**
+	 * Register the script to make the button work
+	 *
+	 * @param array $plugin_array
+	 *
+	 * @return array
+	 */
+	public static function mce_external_plugins( $plugin_array ) {
+		$name = 'documentcloud';
+		$plugin_array['documentcloud'] = plugins_url( 'assets/tinymce.js', __FILE__ );
+
+		return $plugin_array;
+	}
+
+	/**
+	 * Add some hooks when tinymce boots up to insert our button
+	 */
+	public function tinymce_init() {
+		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'edit_pages' ) ) {
+			return;
+		}
+
+		if ( 'true' === get_user_option( 'rich_editing' ) ) {
+			add_filter( 'mce_buttons', array( $this, 'mce_buttons' ) );
+			add_filter( 'mce_external_plugins', array( $this, 'mce_external_plugins' ) );
+		}
+	}
+
+	/**
+	 * Print the template used for TinyMCE previews
+	 */
+	public function print_media_templates() {
+		if ( ! isset( get_current_screen()->id ) || 'post' !== get_current_screen()->base ) {
+			return;
+		}
+		?>
+		<script type="text/html" id="tmpl-editor-documentcloud">
+			<div id='<?php echo esc_attr( 'DV-viewer-{{ data.id }}' ); ?>' class='DV-container'></div>
+			<style type='text/css'><?php echo esc_attr( '#DV-viewer-{{ data.id }}' ); ?> * {box-sizing: content-box;}</style>
+		</script>
+	<?php
 	}
 }
 
