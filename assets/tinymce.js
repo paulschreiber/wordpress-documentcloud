@@ -21,6 +21,8 @@
 				var returnText = '[documentcloud]';
 				ed.execCommand( 'mceInsertContent', 0, returnText );
 			});
+
+			tinymce.ScriptLoader.load( 'https://assets.documentcloud.org/viewer/loader.js' );
 		}
 	});
 	tinymce.PluginManager.add( 'documentcloud', tinymce.plugins.documentCloud );
