@@ -28,15 +28,16 @@
 class WP_DocumentCloud {
 
 	// Plugin constants
-	const CACHING_ENABLED		   = true,
-		  DEFAULT_EMBED_FULL_WIDTH = 940,
-		  OEMBED_RESOURCE_DOMAIN   = 'www.documentcloud.org',
-		  OEMBED_PROVIDER		   = 'https://www.documentcloud.org/api/oembed.{format}',
-		  DOCUMENT_PATTERN		   = '^(?P<protocol>https?):\/\/www\.documentcloud\.org\/documents\/(?P<document_slug>[0-9]+-[\p{L}\p{N}%-]+)';
+	const CACHING_ENABLED          = true;
+	const DEFAULT_EMBED_FULL_WIDTH = 940;
+	const OEMBED_RESOURCE_DOMAIN   = 'www.documentcloud.org';
+	const OEMBED_PROVIDER          = 'https://www.documentcloud.org/api/oembed.{format}';
+	const DOCUMENT_PATTERN         = '^(?P<protocol>https?):\/\/www\.documentcloud\.org\/documents\/(?P<document_slug>[0-9]+-[\p{L}\p{N}%-]+)';
+
 	/**
 	 * Constructor.
 	 */
-	function __construct() {
+	public function __construct() {
 		// Check for conflicts with other DocumentCloud plugins.
 		// Not needed on WordPress VIP since no other DocumentCloud plugins exist.
 		if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || ! WPCOM_IS_VIP_ENV ) {
@@ -63,14 +64,14 @@ class WP_DocumentCloud {
 	/**
 	 * Load plugin textdomain.
 	 */
-	function load_plugin_textdomain() {
+	public function load_plugin_textdomain() {
 		load_plugin_textdomain( 'documentcloud' );
 	}
 
 	/**
 	 * Check for conflicts with the Navis DocumentCloud plugin.
 	 */
-	function check_dc_plugin_conflict() {
+	public function check_dc_plugin_conflict() {
 		if ( is_plugin_active( 'navis-documentcloud/navis-documentcloud.php' ) ) {
 			add_action( 'admin_notices', array( $this, 'dc_conflict_admin_notice' ) );
 		}
@@ -79,7 +80,7 @@ class WP_DocumentCloud {
 	/**
 	 * Create an admin notice when conflicts exist with Navis DocumentCloud.
 	 */
-	function dc_conflict_admin_notice() {
+	public function dc_conflict_admin_notice() {
 		?>
 		<div class="error">
 			<p><?php echo wp_kses_post( __( '<b>Warning!</b> You have two conflicting DocumentCloud plugins activated. Please deactivate Navis DocumentCloud, which has been replaced by <a target="_blank" href="https://wordpress.org/plugins/documentcloud/">DocumentCloud</a>.', 'documentcloud' ) ); ?></p>
@@ -92,7 +93,7 @@ class WP_DocumentCloud {
 	 * resource to inspect it for an oEmbed link tag; we have to tell it what
 	 * our oEmbed endpoint looks like.
 	 */
-	function register_dc_oembed_provider() {
+	public function register_dc_oembed_provider() {
 		/*
 			Hello developer. If you wish to test this plugin against your
 			local installation of DocumentCloud (with its own testing
@@ -105,9 +106,9 @@ class WP_DocumentCloud {
 		*/
 
 		$oembed_resource_domain = apply_filters( 'documentcloud_oembed_resource_domain', WP_DocumentCloud::OEMBED_RESOURCE_DOMAIN );
-		$oembed_provider = apply_filters( 'documentcloud_oembed_provider', WP_DocumentCloud::OEMBED_PROVIDER );
+		$oembed_provider        = apply_filters( 'documentcloud_oembed_provider', WP_DocumentCloud::OEMBED_PROVIDER );
 
-		wp_oembed_add_provider( 'http://'  . $oembed_resource_domain . '/documents/*', $oembed_provider );
+		wp_oembed_add_provider( 'http://' . $oembed_resource_domain . '/documents/*', $oembed_provider );
 		wp_oembed_add_provider( 'https://' . $oembed_resource_domain . '/documents/*', $oembed_provider );
 	}
 
@@ -116,17 +117,17 @@ class WP_DocumentCloud {
 	 *
 	 * @return array
 	 */
-	function get_default_sizes() {
+	public function get_default_sizes() {
 		$wp_embed_defaults = wp_embed_defaults();
 
-		$height		= intval( get_option( 'documentcloud_default_height', $wp_embed_defaults['height'] ) );
-		$width		= intval( get_option( 'documentcloud_default_width', $wp_embed_defaults['width'] ) );
-		$full_width	= intval( get_option( 'documentcloud_full_width', WP_DocumentCloud::DEFAULT_EMBED_FULL_WIDTH ) );
+		$height     = intval( get_option( 'documentcloud_default_height', $wp_embed_defaults['height'] ) );
+		$width      = intval( get_option( 'documentcloud_default_width', $wp_embed_defaults['width'] ) );
+		$full_width = intval( get_option( 'documentcloud_full_width', WP_DocumentCloud::DEFAULT_EMBED_FULL_WIDTH ) );
 
 		return array(
-			'height'		=> $height,
-			'width'			=> $width,
-			'full_width'	=> $full_width,
+			'height'     => $height,
+			'width'      => $width,
+			'full_width' => $full_width,
 		);
 	}
 
@@ -135,7 +136,7 @@ class WP_DocumentCloud {
 	 *
 	 * @return array
 	 */
-	function get_default_atts() {
+	public function get_default_atts() {
 		$default_sizes = $this->get_default_sizes();
 
 		return array(
@@ -174,7 +175,7 @@ class WP_DocumentCloud {
 	 * @param array $args
 	 * @return string
 	 */
-	function prepare_oembed_fetch( $provider, $url, $args ) {
+	public function prepare_oembed_fetch( $provider, $url, $args ) {
 		// Merge actual args with default attributes so that defaults are always
 		// sent to oEmbed endpoint
 		$default_atts = $this->get_default_atts();
@@ -192,21 +193,21 @@ class WP_DocumentCloud {
 
 		// Clean and prepare arguments
 		foreach ( $atts as $key => $value ) {
-			if ( in_array( $key, $oembed_config_keys ) ) {
+			if ( in_array( $key, $oembed_config_keys, true ) ) {
 				$provider = add_query_arg( $key, $value, $provider );
 			}
-			if ( ! in_array( $key, $excluded_embed_config_keys ) ) {
+			if ( ! in_array( $key, $excluded_embed_config_keys, true ) ) {
 				// Without this check, `add_query_arg()` will treat values
 				// that are actually ID selectors, like `container=#foo`,
 				// as URL fragments and throw them at the end of the URL.
 				if ( 0 === strpos( $value, '#' ) ) {
-					$value = urlencode( $value );
+					$value = rawurlencode( $value );
 				}
 				$url = add_query_arg( $key, $value, $url );
 			}
 		}
 
-		$provider = add_query_arg( 'url', urlencode( $url ), $provider );
+		$provider = add_query_arg( 'url', rawurlencode( $url ), $provider );
 
 		return $provider;
 	}
@@ -217,13 +218,13 @@ class WP_DocumentCloud {
 	 * @param array $atts
 	 * @return string
 	 */
-	function process_dc_shortcode( $atts ) {
-		$default_sizes	= $this->get_default_sizes();
-		$default_atts	= $this->get_default_atts();
+	public function process_dc_shortcode( $atts ) {
+		$default_sizes = $this->get_default_sizes();
+		$default_atts  = $this->get_default_atts();
 
 		// Smooshes together passed-in shortcode attrs with defaults
 		// and filters to only those we accept.
-		$filtered_atts	= shortcode_atts( $default_atts, $atts );
+		$filtered_atts = shortcode_atts( $default_atts, $atts );
 
 		// Either the `url` or `id` attributes are required, but `id`
 		// is only supported for backwards compatibility. If it's used,
@@ -233,7 +234,8 @@ class WP_DocumentCloud {
 			if ( empty( $atts['id'] ) ) {
 				return '';
 			} else {
-				$url = $filtered_atts['url'] = 'https://' . WP_DocumentCloud::OEMBED_RESOURCE_DOMAIN . "/documents/{$atts['id']}.html";
+				$filtered_atts['url'] = 'https://' . WP_DocumentCloud::OEMBED_RESOURCE_DOMAIN . "/documents/{$atts['id']}.html";
+				$url                  = $filtered_atts['url'];
 			}
 		}
 
@@ -269,7 +271,8 @@ class WP_DocumentCloud {
 			// This lets WordPress cache the result of the oEmbed call.
 			// Thanks to http://bit.ly/1HykA0U for this pattern.
 			global $wp_embed;
-			$url = $filtered_atts['url'] = $this->clean_dc_url( $atts['url'] );
+			$filtered_atts['url'] = $this->clean_dc_url( $atts['url'] );
+			$url                  = $filtered_atts['url'];
 			return $wp_embed->shortcode( $filtered_atts, $url );
 		} else {
 			return wp_oembed_get( $atts['url'], $filtered_atts );
@@ -283,7 +286,7 @@ class WP_DocumentCloud {
 	 * @param string $url
 	 * @return array
 	 */
-	function parse_dc_url( $url ) {
+	public function parse_dc_url( $url ) {
 		$patterns = array(
 			// Document
 			'{' . WP_DocumentCloud::DOCUMENT_PATTERN . '\.html$}',
@@ -313,13 +316,13 @@ class WP_DocumentCloud {
 	 * @param string $url
 	 * @return string
 	 */
-	function clean_dc_url( $url ) {
+	public function clean_dc_url( $url ) {
 		$elements = $this->parse_dc_url( $url );
 		if ( isset( $elements['document_slug'] ) ) {
 			$url = "{$elements['protocol']}://" . WP_DocumentCloud::OEMBED_RESOURCE_DOMAIN . "/documents/{$elements['document_slug']}";
 			if ( isset( $elements['page_number'] ) ) {
 				$url .= "/pages/{$elements['page_number']}";
-			} else if ( isset( $elements['note_id'] ) ) {
+			} elseif ( isset( $elements['note_id'] ) ) {
 				$url .= "/annotations/{$elements['note_id']}";
 			}
 			$url .= '.html';
@@ -330,7 +333,7 @@ class WP_DocumentCloud {
 	/**
 	 * Add the DocumentCloud options page.
 	 */
-	function add_options_page() {
+	public function add_options_page() {
 		if ( current_user_can( 'manage_options' ) ) {
 			add_options_page( 'DocumentCloud', 'DocumentCloud', 'manage_options', 'documentcloud', array( $this, 'render_options_page' ) );
 		}
@@ -339,12 +342,12 @@ class WP_DocumentCloud {
 	/**
 	 * Render the DocumentCloud options page.
 	 */
-	function render_options_page() {
+	public function render_options_page() {
 		?>
-		<h2><?php esc_html_e( 'DocumentCloud Options', 'documentcloud' ) ?></h2>
+		<h2><?php esc_html_e( 'DocumentCloud Options', 'documentcloud' ); ?></h2>
 		<form action="options.php" method="post">
 
-			<p><?php echo wp_kses_post( __( 'Any widths set here will only take effect if you set <code>responsive="false"</code> on an embed.', 'documentcloud' ) ) ?></p>
+			<p><?php echo wp_kses_post( __( 'Any widths set here will only take effect if you set <code>responsive="false"</code> on an embed.', 'documentcloud' ) ); ?></p>
 
 			<?php settings_fields( 'documentcloud' ); ?>
 			<?php do_settings_sections( 'documentcloud' ); ?>
@@ -357,7 +360,7 @@ class WP_DocumentCloud {
 	/**
 	 * Initialize settings for the DocumentCloud options page.
 	 */
-	function settings_init() {
+	public function settings_init() {
 		if ( current_user_can( 'manage_options' ) ) {
 			add_settings_section(
 				'documentcloud',
@@ -398,7 +401,7 @@ class WP_DocumentCloud {
 	/**
 	 * Render the default height field.
 	 */
-	function default_height_field() {
+	public function default_height_field() {
 		$default_sizes = $this->get_default_sizes();
 		echo '<input type="text" value="' . esc_attr( $default_sizes['height'] ) . '" name="documentcloud_default_height" />';
 	}
@@ -406,7 +409,7 @@ class WP_DocumentCloud {
 	/**
 	 * Render the default width field.
 	 */
-	function default_width_field() {
+	public function default_width_field() {
 		$default_sizes = $this->get_default_sizes();
 		echo '<input type="text" value="' . esc_attr( $default_sizes['width'] ) . '" name="documentcloud_default_width" />';
 	}
@@ -414,10 +417,10 @@ class WP_DocumentCloud {
 	/**
 	 * Render the full width field.
 	 */
-	function full_width_field() {
+	public function full_width_field() {
 		$default_sizes = $this->get_default_sizes();
 		echo '<input type="text" value="' . esc_attr( $default_sizes['full_width'] ) . '" name="documentcloud_full_width" />';
 	}
 }
 
-new WP_DocumentCloud;
+new WP_DocumentCloud();
